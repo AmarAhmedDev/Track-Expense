@@ -48,7 +48,7 @@ class AppTheme {
   );
 
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF1A56DB), Color(0xFF7C3AED)],
+    colors: [Color(0xFF0F172A), Color(0xFF1E1B4B)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
