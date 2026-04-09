@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -38,6 +39,91 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   late AnimationController _formEntranceController;
   late Animation<double> _formFadeAnimation;
   late Animation<Offset> _formSlideAnimation;
+
+  bool _hasAutoFilled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasAutoFilled) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is String) {
+        try {
+          final payload = jsonDecode(args);
+          final title = payload['title'] as String? ?? '';
+          final content = payload['content'] as String? ?? '';
+          
+          _noteController.text = content;
+          
+          final cbeTransferRegex = RegExp(r'transfered\s+ETB\s+([\d,.]+)');
+          final cbeReceiveRegex = RegExp(r'Credited\s+with\s+ETB\s+([\d,.]+)');
+          final telebirrTransferRegex = RegExp(r'transferred\s+ETB\s+([\d,.]+)');
+          final telebirrReceiveRegex = RegExp(r'received\s+ETB\s+([\d,.]+)');
+          final telebirrRechargeRegex = RegExp(r'recharged\s+ETB\s+([\d,.]+)');
+
+          String? parsedAmount;
+          TransactionType? parsedType;
+          String? parsedToFrom;
+
+          if (cbeTransferRegex.hasMatch(content)) {
+            parsedAmount = cbeTransferRegex.firstMatch(content)!.group(1);
+            parsedType = TransactionType.expense;
+            final toMatch = RegExp(r'to\s+(.*?)\s+on\s+').firstMatch(content);
+            if (toMatch != null) parsedToFrom = toMatch.group(1);
+          } else if (cbeReceiveRegex.hasMatch(content)) {
+            parsedAmount = cbeReceiveRegex.firstMatch(content)!.group(1);
+            parsedType = TransactionType.income;
+            final fromMatch = RegExp(r'from\s+(.*?),?\s+on\s+').firstMatch(content);
+            if (fromMatch != null) parsedToFrom = fromMatch.group(1);
+          } else if (telebirrTransferRegex.hasMatch(content)) {
+            parsedAmount = telebirrTransferRegex.firstMatch(content)!.group(1);
+            parsedType = TransactionType.expense;
+            final toMatch = RegExp(r'to\s+(.*?)\s+on\s+').firstMatch(content);
+            if (toMatch != null) parsedToFrom = toMatch.group(1);
+          } else if (telebirrReceiveRegex.hasMatch(content)) {
+            parsedAmount = telebirrReceiveRegex.firstMatch(content)!.group(1);
+            parsedType = TransactionType.income;
+            final fromMatch = RegExp(r'from\s+(.*?)\s+to\s+your').firstMatch(content);
+            if (fromMatch != null) parsedToFrom = fromMatch.group(1);
+          } else if (telebirrRechargeRegex.hasMatch(content)) {
+            parsedAmount = telebirrRechargeRegex.firstMatch(content)!.group(1);
+            parsedType = TransactionType.expense;
+            final forMatch = RegExp(r'airtime\s+for\s+(.*?)\s+on\s+').firstMatch(content);
+            parsedToFrom = forMatch != null ? 'Airtime for ${forMatch.group(1)}' : 'Airtime';
+          }
+
+          if (parsedAmount != null) {
+            _amountController.text = parsedAmount.replaceAll(',', '');
+          } else {
+             // Fallback logic
+             final amountMatch = RegExp(r'ETB\s?(\d+[\.,]?\d*)').firstMatch(content);
+             if (amountMatch != null) {
+                _amountController.text = amountMatch.group(1)!.replaceAll(',', '');
+             }
+             if (content.toLowerCase().contains('received') || content.toLowerCase().contains('deposit') || content.toLowerCase().contains('credited')) {
+                parsedType = TransactionType.income;
+             }
+          }
+
+          if (parsedType != null) {
+            _selectedType = parsedType;
+          }
+
+          if (parsedToFrom != null && parsedToFrom.isNotEmpty) {
+             _titleController.text = _selectedType == TransactionType.income 
+                ? 'From $parsedToFrom' 
+                : (content.contains('recharged') ? parsedToFrom : 'Transfer to $parsedToFrom');
+          } else {
+             _titleController.text = title.isNotEmpty ? title : 'Bank Transaction';
+          }
+
+          _hasAutoFilled = true;
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+    }
+  }
 
   @override
   void initState() {

@@ -5,9 +5,12 @@ import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 import './routes/app_routes.dart';
 import './service/settings_service.dart';
+import './service/bank_notification_service.dart';
 
 /// Global notifier — Settings screen writes to this to switch theme at runtime.
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +21,9 @@ void main() async {
   themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
 
   await SettingsService.instance.init();
+  
+  // Initialize Bank tracking capabilities
+  await BankNotificationService().init(navigatorKey);
 
   bool hasShownError = false;
 
@@ -58,6 +64,7 @@ class MyApp extends StatelessWidget {
           valueListenable: themeNotifier,
           builder: (context, mode, _) {
             return MaterialApp(
+              navigatorKey: navigatorKey,
               title: 'smartexpensetracker',
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,

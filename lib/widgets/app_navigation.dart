@@ -1,9 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../routes/app_routes.dart';
 
-/// Floating Pill Bottom Navigation Bar — Family D, V2.
-/// Detached from screen edges, scroll-aware hide/show, animated active indicator.
+/// Floating Pill Bottom Navigation Bar — Premium Glassmorphic Version
+/// Detached from screen edges, scroll-aware hide/show, animated active indicator, glass background.
 /// Used by all authenticated screens.
 class AppNavigation extends StatefulWidget {
   final int currentIndex;
@@ -77,38 +78,53 @@ class _AppNavigationState extends State<AppNavigation>
     final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
       child: Container(
-        height: 68,
+        height: 72,
         decoration: BoxDecoration(
-          color: isDark ? AppTheme.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withAlpha(38),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
+              color: AppTheme.primary.withValues(alpha: 0.15),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
             ),
             BoxShadow(
-              color: Colors.black.withAlpha(20),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_items.length, (index) {
-            final item = _items[index];
-            final isActive = widget.currentIndex == index;
-            final isCenter = index == 2; // FAB-style center button
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.surfaceDark.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(_items.length, (index) {
+                  final item = _items[index];
+                  final isActive = widget.currentIndex == index;
+                  final isCenter = index == 2; // FAB-style center button
 
-            if (isCenter) {
-              return _buildCenterButton(context);
-            }
+                  if (isCenter) {
+                    return _buildCenterButton(context);
+                  }
 
-            return _buildNavItem(context, item, index, isActive);
-          }),
+                  return _buildNavItem(context, item, index, isActive);
+                }),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -118,20 +134,20 @@ class _AppNavigationState extends State<AppNavigation>
     return GestureDetector(
       onTap: () => widget.onTap(2),
       child: Container(
-        width: 52,
-        height: 52,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           gradient: AppTheme.primaryGradient,
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withAlpha(102),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: AppTheme.primary.withValues(alpha: 0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: const Icon(Icons.add_rounded, color: Colors.white, size: 26),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
       ),
     );
   }
