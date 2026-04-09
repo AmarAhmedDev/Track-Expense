@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   double _totalIncome = 0;
   double _totalExpense = 0;
-  double _budgetLimit = 1500;
+  double _budgetLimit = 0;
   List<TransactionModel> _recentTransactions = [];
 
 
@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _totalIncome = income;
           _totalExpense = expense;
-          _budgetLimit = budget?.monthlyLimit ?? 1500;
+          _budgetLimit = income > 0 ? income : (budget?.monthlyLimit ?? 0);
           _recentTransactions = all.take(5).toList();
           _isLoading = false;
         });
