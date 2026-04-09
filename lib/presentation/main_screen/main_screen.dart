@@ -52,21 +52,24 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (pageIndex) {
-          int navIndex = pageIndex >= 2 ? pageIndex + 1 : pageIndex;
-          setState(() {
-             _currentNavIndex = navIndex;
-          });
-        },
-        physics: const BouncingScrollPhysics(),
-        children: const [
-          HomeScreen(),
-          TransactionHistoryScreen(),
-          AnalyticsScreen(),
-          SettingsScreen(),
-        ],
+      body: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (pageIndex) {
+            int navIndex = pageIndex >= 2 ? pageIndex + 1 : pageIndex;
+            setState(() {
+               _currentNavIndex = navIndex;
+            });
+          },
+          physics: const ClampingScrollPhysics(),
+          children: const [
+            HomeScreen(),
+            TransactionHistoryScreen(),
+            AnalyticsScreen(),
+            SettingsScreen(),
+          ],
+        ),
       ),
       bottomNavigationBar: AppNavigation(
         currentIndex: _currentNavIndex,
