@@ -5,6 +5,7 @@ import '../presentation/add_expense_screen/add_expense_screen.dart';
 import '../presentation/transaction_history_screen/widget/transaction_history_screen.dart';
 import '../presentation/analytics_screen/analytics_screen.dart';
 import '../presentation/settings_screen/settings_screen.dart';
+import '../presentation/lock_screen/lock_screen.dart';
 
 /// Centralized route registry for SmartExpenseTracker.
 /// All navigation uses pushNamed — never direct widget instantiation.
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String transactionHistoryScreen = '/transaction-history-screen';
   static const String analyticsScreen = '/analytics-screen';
   static const String settingsScreen = '/settings-screen';
+  static const String lockScreen = '/lock-screen';
 
   static Map<String, WidgetBuilder> routes = {
     initial: (context) => const MainScreen(),
@@ -23,5 +25,6 @@ class AppRoutes {
     transactionHistoryScreen: (context) => const TransactionHistoryScreen(),
     analyticsScreen: (context) => const AnalyticsScreen(),
     settingsScreen: (context) => const SettingsScreen(),
+    lockScreen: (context) => const LockScreen(),
   };
 }

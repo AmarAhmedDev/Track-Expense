@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.fainance_planer"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36 // Explicitly set to 36 for plugin compat
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -25,8 +25,8 @@ android {
         applicationId = "com.example.fainance_planer"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 24 // Raised to 24 for broader modern library support
+        targetSdk = 34 // Set to 34 to ensure compatibility with Android 14+
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true

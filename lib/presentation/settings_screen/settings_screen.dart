@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../database/database_helper.dart';
 import '../../service/settings_service.dart';
 import '../../main.dart' show themeNotifier;
+import '../lock_screen/lock_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,9 +17,10 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen>
     with SingleTickerProviderStateMixin {
-  bool _isDarkMode = false;
   String _selectedCurrency = SettingsService.defaultCurrency;
   bool _isLoading = true;
+  bool _isLockEnabled = false;
+  bool _isBiometricEnabled = false;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -43,12 +45,13 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _loadSettings() async {
-    final isDark = await SettingsService.instance.getDarkMode();
     final currency = await SettingsService.instance.getCurrency();
+    
     if (mounted) {
       setState(() {
-        _isDarkMode = isDark;
         _selectedCurrency = currency;
+        _isLockEnabled = SettingsService.instance.isLockEnabled;
+        _isBiometricEnabled = SettingsService.instance.isBiometricEnabled;
         _isLoading = false;
       });
       _fadeController.forward();
@@ -56,14 +59,71 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Future<void> _toggleDarkMode(bool value) async {
-    setState(() => _isDarkMode = value);
-    await SettingsService.instance.setDarkMode(value);
-    themeNotifier.value = value ? ThemeMode.dark : ThemeMode.light;
+    final mode = value ? ThemeMode.dark : ThemeMode.light;
+    await SettingsService.instance.setThemeMode(mode);
+    themeNotifier.value = mode;
   }
 
   Future<void> _selectCurrency(String currency) async {
     setState(() => _selectedCurrency = currency);
     await SettingsService.instance.setCurrency(currency);
+  }
+
+  Future<void> _toggleAppLock(bool value) async {
+    if (value) {
+      // Navigate to lock screen setup
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const LockScreen(isSettingUp: true),
+        ),
+      );
+      if (result == true && mounted) {
+        setState(() => _isLockEnabled = true);
+      }
+    } else {
+      // Disable lock
+      await SettingsService.instance.setAppLockEnabled(false);
+      await SettingsService.instance.setAppPin(null);
+      await SettingsService.instance.setBiometricEnabled(false);
+      if (mounted) {
+        setState(() {
+          _isLockEnabled = false;
+          _isBiometricEnabled = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    await SettingsService.instance.setBiometricEnabled(value);
+    if (mounted) {
+      setState(() => _isBiometricEnabled = value);
+    }
+  }
+
+  Future<void> _changePin() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LockScreen(isChangingPin: true),
+      ),
+    );
+    if (result == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'PIN changed successfully.',
+            style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          backgroundColor: AppTheme.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _showResetConfirmationDialog() {
@@ -274,7 +334,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                                   isDark: isDark,
                                   child: _DarkModeRow(
                                     isDark: isDark,
-                                    value: _isDarkMode,
+                                    value: isDark,
                                     onChanged: _toggleDarkMode,
                                   ),
                                 ),
@@ -331,6 +391,51 @@ class _SettingsScreenState extends State<SettingsScreen>
                                           );
                                         })
                                         .toList(),
+                                  ),
+                                ),
+
+                                SizedBox(height: 2.5.h),
+
+                                // ── Security Section ──────────
+                                _SectionHeader(
+                                  label: 'Security',
+                                  icon: Icons.shield_outlined,
+                                  isDark: isDark,
+                                ),
+                                SizedBox(height: 1.h),
+                                _SettingsCard(
+                                  isDark: isDark,
+                                  child: Column(
+                                    children: [
+                                      _AppLockRow(
+                                        isDark: isDark,
+                                        value: _isLockEnabled,
+                                        onChanged: _toggleAppLock,
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        thickness: 1,
+                                        color: isDark
+                                            ? AppTheme.outlineDark
+                                            : AppTheme.outlineLight,
+                                      ),
+                                      _BiometricRow(
+                                        isDark: isDark,
+                                        value: _isBiometricEnabled,
+                                        onChanged: _isLockEnabled ? _toggleBiometric : null,
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        thickness: 1,
+                                        color: isDark
+                                            ? AppTheme.outlineDark
+                                            : AppTheme.outlineLight,
+                                      ),
+                                      _ChangePinRow(
+                                        isDark: isDark,
+                                        onTap: _isLockEnabled ? _changePin : null,
+                                      ),
+                                    ],
                                   ),
                                 ),
 
@@ -700,5 +805,236 @@ class _ResetDataRow extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ── App Lock Row ───────────────────────────────────────────────────────────
+
+class _AppLockRow extends StatelessWidget {
+  final bool isDark;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _AppLockRow({
+    required this.isDark,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.surfaceVariantDark
+                  : AppTheme.surfaceVariantLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              value ? Icons.lock_rounded : Icons.lock_open_rounded,
+              size: 20,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'App Lock',
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppTheme.onSurfaceDark
+                        : AppTheme.onSurfaceLight,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value ? 'PIN protection enabled' : 'No lock set',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: isDark
+                        ? AppTheme.onSurfaceMutedDark
+                        : AppTheme.onSurfaceMutedLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppTheme.primary,
+            activeTrackColor: AppTheme.primaryMuted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Biometric Row ──────────────────────────────────────────────────────────
+
+class _BiometricRow extends StatelessWidget {
+  final bool isDark;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  const _BiometricRow({
+    required this.isDark,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    bool isEnabled = onChanged != null;
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.5,
+      child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.surfaceVariantDark
+                  : AppTheme.surfaceVariantLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.fingerprint_rounded,
+              size: 20,
+              color: AppTheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Biometric Unlock',
+                  style: GoogleFonts.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppTheme.onSurfaceDark
+                        : AppTheme.onSurfaceLight,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value ? 'Fingerprint / Face enabled' : 'Use fingerprint or face',
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: isDark
+                        ? AppTheme.onSurfaceMutedDark
+                        : AppTheme.onSurfaceMutedLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppTheme.primary,
+            activeTrackColor: AppTheme.primaryMuted,
+          ),
+        ],
+      ),
+    ));
+  }
+}
+
+// ── Change PIN Row ─────────────────────────────────────────────────────────
+
+class _ChangePinRow extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback? onTap;
+
+  const _ChangePinRow({required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    bool isEnabled = onTap != null;
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.5,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppTheme.surfaceVariantDark
+                    : AppTheme.surfaceVariantLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.pin_rounded,
+                size: 20,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Change PIN',
+                    style: GoogleFonts.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppTheme.onSurfaceDark
+                          : AppTheme.onSurfaceLight,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Update your 4-digit PIN',
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: isDark
+                          ? AppTheme.onSurfaceMutedDark
+                          : AppTheme.onSurfaceMutedLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: isDark
+                  ? AppTheme.onSurfaceMutedDark
+                  : AppTheme.onSurfaceMutedLight,
+            ),
+          ],
+        ),
+      ),
+    ));
   }
 }

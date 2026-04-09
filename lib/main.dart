@@ -1,5 +1,5 @@
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 
 import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
@@ -15,15 +15,14 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load persisted theme preference
-  final prefs = await SharedPreferences.getInstance();
-  final isDark = prefs.getBool('dark_mode') ?? false;
-  themeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
-
-  await SettingsService.instance.init();
+  // Initialize settings concurrently to shave off startup time
+  await Future.wait([
+    SettingsService.instance.getThemeMode().then((mode) => themeNotifier.value = mode),
+    SettingsService.instance.init(),
+  ]);
   
-  // Initialize Bank tracking capabilities
-  await BankNotificationService().init(navigatorKey);
+  // Initialize Bank tracking capabilities asynchronously to avoid blocking startup
+  BankNotificationService().init(navigatorKey);
 
   bool hasShownError = false;
 
@@ -50,8 +49,45 @@ void main() async {
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  bool _isLocked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // If the app starts with lock screen, mark as locked so we don't double-push
+    if (SettingsService.instance.isLockEnabled) {
+      _isLocked = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (SettingsService.instance.isLockEnabled && !_isLocked) {
+        _isLocked = true;
+        navigatorKey.currentState?.pushNamed(AppRoutes.lockScreen).then((_) {
+          _isLocked = false;
+        });
+      }
+    } else if (state == AppLifecycleState.paused) {
+        // App went to background
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +117,9 @@ class MyApp extends StatelessWidget {
               // 🚨 END CRITICAL SECTION
               debugShowCheckedModeBanner: false,
               routes: AppRoutes.routes,
-              initialRoute: AppRoutes.initial,
+              initialRoute: SettingsService.instance.isLockEnabled
+                  ? AppRoutes.lockScreen
+                  : AppRoutes.initial,
             );
           },
         );

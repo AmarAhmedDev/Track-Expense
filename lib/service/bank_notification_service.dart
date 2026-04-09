@@ -120,6 +120,8 @@ class BankNotificationService {
       priority: Priority.high,
       ticker: 'ticker',
       color: Color(0xFF5A4FCF),
+      ongoing: true,
+      autoCancel: false,
     );
 
     const NotificationDetails platformChannelSpecifics =

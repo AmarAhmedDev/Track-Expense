@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 /// Persistent settings service backed by SharedPreferences.
 /// Manages dark mode toggle and selected currency.
@@ -9,6 +10,9 @@ class SettingsService {
 
   static const String _keyDarkMode = 'dark_mode';
   static const String _keyCurrency = 'currency';
+  static const String _keyAppLockEnabled = 'app_lock_enabled';
+  static const String _keyAppPin = 'app_pin';
+  static const String _keyBiometricEnabled = 'biometric_enabled';
 
   static const String defaultCurrency = 'ETB';
   static const List<String> supportedCurrencies = ['ETB', 'USD', 'EUR'];
@@ -29,9 +33,20 @@ class SettingsService {
   String get cachedCurrency => _cachedCurrency;
   String get currentSymbol => getSymbol(_cachedCurrency);
 
+  bool _isLockEnabled = false;
+  String? _appPin;
+  bool _isBiometricEnabled = false;
+
+  bool get isLockEnabled => _isLockEnabled;
+  String? get appPin => _appPin;
+  bool get isBiometricEnabled => _isBiometricEnabled;
+
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedCurrency = prefs.getString(_keyCurrency) ?? defaultCurrency;
+    _isLockEnabled = prefs.getBool(_keyAppLockEnabled) ?? false;
+    _appPin = prefs.getString(_keyAppPin);
+    _isBiometricEnabled = prefs.getBool(_keyBiometricEnabled) ?? false;
   }
 
   Future<bool> getDarkMode() async {
@@ -44,6 +59,22 @@ class SettingsService {
     await prefs.setBool(_keyDarkMode, value);
   }
 
+  Future<ThemeMode> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = prefs.getString('theme_mode');
+    if (mode == 'dark') return ThemeMode.dark;
+    if (mode == 'light') return ThemeMode.light;
+    return ThemeMode.system;
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    String str = 'system';
+    if (mode == ThemeMode.dark) str = 'dark';
+    if (mode == ThemeMode.light) str = 'light';
+    await prefs.setString('theme_mode', str);
+  }
+
   Future<String> getCurrency() async {
     final prefs = await SharedPreferences.getInstance();
     _cachedCurrency = prefs.getString(_keyCurrency) ?? defaultCurrency;
@@ -54,6 +85,28 @@ class SettingsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyCurrency, currency);
     _cachedCurrency = currency;
+  }
+
+  Future<void> setAppLockEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyAppLockEnabled, value);
+    _isLockEnabled = value;
+  }
+
+  Future<void> setAppPin(String? pin) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (pin == null) {
+      await prefs.remove(_keyAppPin);
+    } else {
+      await prefs.setString(_keyAppPin, pin);
+    }
+    _appPin = pin;
+  }
+
+  Future<void> setBiometricEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyBiometricEnabled, value);
+    _isBiometricEnabled = value;
   }
 
   /// Currencies where the symbol appears after the amount (suffix position)

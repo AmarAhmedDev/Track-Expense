@@ -1,0 +1,11 @@
+Analyzing fainance_planer...                                    
+
+   info - The import of './service/settings_service.dart' is unnecessary because all of the used elements are also provided by the import of '../core/app_export.dart' - lib\main.dart:7:8 - unnecessary_import
+   info - The import of 'package:flutter/material.dart' is unnecessary because all of the used elements are also provided by the import of '../../core/app_export.dart' - lib\presentation\lock_screen\lock_screen.dart:2:8 - unnecessary_import
+   info - The import of '../../service/settings_service.dart' is unnecessary because all of the used elements are also provided by the import of '../../core/app_export.dart' - lib\presentation\lock_screen\lock_screen.dart:7:8 - unnecessary_import
+   info - The import of 'package:flutter/material.dart' is unnecessary because all of the used elements are also provided by the import of '../../core/app_export.dart' - lib\presentation\main_screen\main_screen.dart:1:8 - unnecessary_import
+warning - Unused import: 'package:local_auth/local_auth.dart' - lib\presentation\settings_screen\settings_screen.dart:3:8 - unused_import
+   info - The imported package 'fainance_planer' isn't a dependency of the importing package - test\widget_test.dart:11:8 - depend_on_referenced_packages
+  error - Target of URI doesn't exist: 'package:fainance_planer/main.dart' - test\widget_test.dart:11:8 - uri_does_not_exist
+  error - The name 'MyApp' isn't a class - test\widget_test.dart:16:35 - creation_with_non_type
+
