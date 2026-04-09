@@ -482,7 +482,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
               ),
               const SizedBox(width: 3),
               Text(
-                '${SettingsService.instance.currentSymbol}${totalIncome.toStringAsFixed(0)}',
+                SettingsService.instance.formatAmount(totalIncome, decimalDigits: 0),
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -511,7 +511,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
               ),
               const SizedBox(width: 3),
               Text(
-                '${SettingsService.instance.currentSymbol}${totalExpense.toStringAsFixed(0)}',
+                SettingsService.instance.formatAmount(totalExpense, decimalDigits: 0),
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -576,19 +576,19 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
               const SizedBox(height: 16),
               _SummaryRow(
                 label: 'Total Income',
-                value: '${SettingsService.instance.currentSymbol}${totalIncome.toStringAsFixed(2)}',
+                value: SettingsService.instance.formatAmount(totalIncome),
                 color: AppTheme.income,
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 label: 'Total Expense',
-                value: '${SettingsService.instance.currentSymbol}${totalExpense.toStringAsFixed(2)}',
+                value: SettingsService.instance.formatAmount(totalExpense),
                 color: AppTheme.expense,
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 label: 'Net Balance',
-                value: '${SettingsService.instance.currentSymbol}${(totalIncome - totalExpense).toStringAsFixed(2)}',
+                value: SettingsService.instance.formatAmount(totalIncome - totalExpense),
                 color: (totalIncome - totalExpense) >= 0
                     ? AppTheme.income
                     : AppTheme.expense,

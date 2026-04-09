@@ -63,11 +63,6 @@ class _HomeHeaderWidgetState extends State<HomeHeaderWidget>
   Widget build(BuildContext context) {
     final balance = widget.totalIncome - widget.totalExpense;
     final isPositive = balance >= 0;
-    final currencyFormat = NumberFormat.currency(
-      symbol: SettingsService.instance.currentSymbol,
-      decimalDigits: 2,
-    );
-
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -157,7 +152,7 @@ class _HomeHeaderWidgetState extends State<HomeHeaderWidget>
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
                             return Text(
-                              currencyFormat.format(value),
+                              SettingsService.instance.formatAmount(value),
                               style: TextStyle(
                                 color: isPositive
                                     ? Colors.white

@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 import '../../../core/app_export.dart';
 
 /// KPI row — Income and Expense cards with gradient accent styling.
@@ -112,10 +110,7 @@ class _KpiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.currency(
-      symbol: SettingsService.instance.currentSymbol,
-      decimalDigits: 2,
-    );
+    final settings = SettingsService.instance;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -172,7 +167,7 @@ class _KpiCard extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   builder: (context, value, _) {
                     return Text(
-                      currencyFormat.format(value),
+                      settings.formatAmount(value),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: accentColor,

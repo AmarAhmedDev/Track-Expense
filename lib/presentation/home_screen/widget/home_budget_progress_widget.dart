@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 import '../../../core/app_export.dart';
 
 /// Budget progress indicator card.
@@ -70,10 +68,7 @@ class _HomeBudgetProgressWidgetState extends State<HomeBudgetProgressWidget>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final currencyFormat = NumberFormat.currency(
-      symbol: SettingsService.instance.currentSymbol,
-      decimalDigits: 0,
-    );
+    final settings = SettingsService.instance;
     final rawPercentage = widget.limit > 0
         ? (widget.spent / widget.limit).clamp(0.0, 1.5)
         : 0.0;
@@ -168,14 +163,14 @@ class _HomeBudgetProgressWidgetState extends State<HomeBudgetProgressWidget>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${currencyFormat.format(widget.spent)} spent',
+                      '${settings.formatAmount(widget.spent, decimalDigits: 0)} spent',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     Text(
-                      'Limit: ${currencyFormat.format(widget.limit)}',
+                      'Limit: ${settings.formatAmount(widget.limit, decimalDigits: 0)}',
                       style: theme.textTheme.bodySmall,
                     ),
                   ],

@@ -202,10 +202,7 @@ class _TransactionListItem extends StatelessWidget {
     final isExpense = transaction.type == TransactionType.expense;
     final amountColor = isExpense ? AppTheme.expense : AppTheme.income;
     final amountPrefix = isExpense ? '-' : '+';
-    final currencyFormat = NumberFormat.currency(
-      symbol: SettingsService.instance.currentSymbol,
-      decimalDigits: 2,
-    );
+    final settings = SettingsService.instance;
     final dateFormat = DateFormat('MMM d');
 
     // Parse category color
@@ -334,7 +331,7 @@ class _TransactionListItem extends StatelessWidget {
             ),
             // Amount
             Text(
-              '$amountPrefix${currencyFormat.format(transaction.amount)}',
+              '$amountPrefix${settings.formatAmount(transaction.amount)}',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,

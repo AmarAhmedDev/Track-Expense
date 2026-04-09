@@ -314,7 +314,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${SettingsService.instance.currentSymbol}${amount.toStringAsFixed(0)}',
+                  SettingsService.instance.formatAmount(amount, decimalDigits: 0),
                   style: GoogleFonts.outfit(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -491,7 +491,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                     tooltipBgColor: AppTheme.primary.withAlpha(230),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
-                        '${SettingsService.instance.currentSymbol}${rod.toY.toStringAsFixed(0)}',
+                        SettingsService.instance.formatAmount(rod.toY, decimalDigits: 0),
                         GoogleFonts.outfit(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -533,7 +533,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
-                          '${SettingsService.instance.currentSymbol}${value.toInt()}',
+                          SettingsService.instance.formatAmount(value, decimalDigits: 0),
                           style: GoogleFonts.outfit(
                             fontSize: 10,
                             color: AppTheme.mutedLight,
@@ -663,7 +663,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       return touchedSpots.map((spot) {
                         final label = spot.barIndex == 0 ? 'Income' : 'Expense';
                         return LineTooltipItem(
-                          '$label: ${SettingsService.instance.currentSymbol}${spot.y.toStringAsFixed(0)}',
+                          '$label: ${SettingsService.instance.formatAmount(spot.y, decimalDigits: 0)}',
                           GoogleFonts.outfit(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -716,7 +716,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
-                          '${SettingsService.instance.currentSymbol}${value.toInt()}',
+                          SettingsService.instance.formatAmount(value, decimalDigits: 0),
                           style: GoogleFonts.outfit(
                             fontSize: 10,
                             color: AppTheme.mutedLight,

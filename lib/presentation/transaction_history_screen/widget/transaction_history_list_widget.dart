@@ -221,10 +221,7 @@ class _HistoryTransactionItem extends StatelessWidget {
     final isExpense = transaction.type == TransactionType.expense;
     final amountColor = isExpense ? AppTheme.expense : AppTheme.income;
     final amountPrefix = isExpense ? '-' : '+';
-    final currencyFormat = NumberFormat.currency(
-      symbol: SettingsService.instance.currentSymbol,
-      decimalDigits: 2,
-    );
+    final settings = SettingsService.instance;
     final timeFormat = DateFormat('h:mm a');
 
     Color categoryColor = AppTheme.primary;
@@ -382,7 +379,7 @@ class _HistoryTransactionItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '$amountPrefix${currencyFormat.format(transaction.amount)}',
+                  '$amountPrefix${settings.formatAmount(transaction.amount)}',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,

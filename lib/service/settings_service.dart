@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persistent settings service backed by SharedPreferences.
@@ -55,6 +56,25 @@ class SettingsService {
     _cachedCurrency = currency;
   }
 
+  /// Currencies where the symbol appears after the amount (suffix position)
+  static const Set<String> _suffixCurrencies = {'ETB'};
+
   String getSymbol(String currency) => currencySymbols[currency] ?? 'Br';
   String getName(String currency) => currencyNames[currency] ?? currency;
+
+  /// Format an amount with the correct currency symbol placement.
+  /// For ETB: "3,000.00 Br" (suffix with space)
+  /// For USD: "$3,000.00" (prefix, no space)
+  /// For EUR: "€3,000.00" (prefix, no space)
+  String formatAmount(double amount, {int decimalDigits = 2}) {
+    final symbol = currentSymbol;
+    final numberFormat = NumberFormat.decimalPatternDigits(
+      decimalDigits: decimalDigits,
+    );
+    final formatted = numberFormat.format(amount);
+    if (_suffixCurrencies.contains(_cachedCurrency)) {
+      return '$formatted $symbol';
+    }
+    return '$symbol$formatted';
+  }
 }
