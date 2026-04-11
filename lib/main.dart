@@ -5,7 +5,7 @@ import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 import './routes/app_routes.dart';
 import './service/settings_service.dart';
-import './service/bank_notification_service.dart';
+
 
 /// Global notifier — Settings screen writes to this to switch theme at runtime.
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
@@ -21,8 +21,7 @@ void main() async {
     SettingsService.instance.init(),
   ]);
   
-  // Initialize Bank tracking capabilities asynchronously to avoid blocking startup
-  BankNotificationService().init(navigatorKey);
+  // Initialization removed from here to move into UI tree
 
   bool hasShownError = false;
 

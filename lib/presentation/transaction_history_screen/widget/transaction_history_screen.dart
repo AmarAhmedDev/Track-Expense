@@ -400,18 +400,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen>
           padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
           child: Row(
             children: [
-              IconButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.homeScreen,
-                  (route) => false,
+              if (ModalRoute.of(context)?.settings.name == AppRoutes.transactionHistoryScreen)
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
-                icon: const Icon(
-                  Icons.arrow_back_ios_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
               const Expanded(
                 child: Text(
                   'Transaction History',

@@ -8,6 +8,8 @@ import './widget/home_budget_progress_widget.dart';
 import './widget/home_header_widget.dart';
 import './widget/home_kpi_cards_widget.dart';
 import './widget/home_recent_transactions_widget.dart';
+import '../../main.dart';
+import '../../service/bank_notification_service.dart';
 
 /// Home Screen — Dashboard entry point for SmartExpenseTracker.
 /// Shows greeting, KPI summary cards, budget progress, and recent transactions.
@@ -36,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadData();
     DatabaseHelper.instance.onTransactionsChanged.addListener(_loadData);
+    
+    // Initialize Bank tracking capabilities here where UI starts
+    BankNotificationService().init(navigatorKey);
   }
 
   @override
