@@ -71,6 +71,9 @@ class BankNotificationService {
   }
 
   void _handleIncomingNotification(ServiceNotificationEvent event) {
+    // Ignore notification dismissal events to prevent duplicate prompts
+    if (event.hasRemoved == true) return;
+
     final originalTitle = event.title ?? '';
     final originalContent = event.content ?? '';
     final title = originalTitle.toLowerCase();
