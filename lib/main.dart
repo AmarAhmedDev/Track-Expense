@@ -5,6 +5,7 @@ import '../core/app_export.dart';
 import '../widgets/custom_error_widget.dart';
 import './routes/app_routes.dart';
 import './service/settings_service.dart';
+import './service/bank_notification_service.dart';
 
 
 /// Global notifier — Settings screen writes to this to switch theme at runtime.
@@ -66,6 +67,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (SettingsService.instance.isLockEnabled) {
       _isLocked = true;
     }
+    // Initialize bank notification tracking once at app start
+    BankNotificationService().init(navigatorKey);
   }
 
   @override
