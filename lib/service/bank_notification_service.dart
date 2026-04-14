@@ -27,10 +27,10 @@ class BankNotificationService {
   /// Stored stream subscription so we can manage its lifecycle
   StreamSubscription<ServiceNotificationEvent>? _notificationSubscription;
 
-  /// Deduplication: track recently processed notification content hashes
-  /// to prevent firing the same notification twice, while still allowing
-  /// genuinely new ones through.
-  final Set<String> _recentHashes = {};
+  /// Deduplication: track when we last processed a notification content hash
+  /// to prevent firing the same notification twice, while allowing new ones.
+  /// Using DateTime instead of Future.delayed prevents background suspension issues.
+  final Map<String, DateTime> _recentHashes = {};
 
   /// Bank keywords for Ethiopian financial institutions
   static const List<String> _bankKeywords = [
@@ -141,11 +141,14 @@ class BankNotificationService {
     return '$title|$content';
   }
 
-  /// Clean old hashes after a delay to allow future identical transactions
-  void _scheduleHashCleanup(String hash) {
-    Future.delayed(const Duration(seconds: 30), () {
-      _recentHashes.remove(hash);
-    });
+  /// No longer using Future.delayed for cleanup to avoid isolate suspension bugs.
+  /// We handle it manually in _handleIncomingNotification length checks.
+  void _scheduleHashCleanup() {
+    if (_recentHashes.length > 50) {
+      // Remove entries older than 5 minutes to prevent memory leak
+      final now = DateTime.now();
+      _recentHashes.removeWhere((key, time) => now.difference(time).inMinutes > 5);
+    }
   }
 
   void _handleIncomingNotification(ServiceNotificationEvent event) {
@@ -163,15 +166,23 @@ class BankNotificationService {
     if (content.contains('checking for') || content.contains('looking for')) return;
 
     // Ignore our own app's notifications to prevent infinite loops
-    if (packageName.contains('smartexpensetracker') || 
+    if (packageName.contains('smartexpensetracker') ||
         packageName.contains('fainance_planer') ||
-        packageName.contains('track_expense')) return;
-
-    // Deduplication: skip if we just processed this exact notification
-    final hash = _contentHash(title, content);
-    if (_recentHashes.contains(hash)) {
-      log('[BankNotif] Duplicate skipped: $hash');
+        packageName.contains('track_expense')) {
       return;
+    }
+
+    // Deduplication using timestamp to survive background isolate suspension
+    final hash = _contentHash(title, content);
+    final now = DateTime.now();
+    
+    if (_recentHashes.containsKey(hash)) {
+      final lastProcessed = _recentHashes[hash]!;
+      // Block identical notifications if they arrive within 20 seconds.
+      if (now.difference(lastProcessed).inSeconds < 20) {
+        log('[BankNotif] Duplicate skipped: $hash');
+        return;
+      }
     }
 
     log('[BankNotif] Incoming => Pkg: $packageName | Title: $originalTitle | Content: $originalContent');
@@ -197,6 +208,10 @@ class BankNotificationService {
 
       if (hasAction && (hasCurrency || hasAmount)) {
         isBankNotification = true;
+      } else if (title.contains('1000') || title.contains('127') || title.contains('cbe') || title.contains('telebirr')) {
+        // Fallback for grouped SMS: If the title is explicitly the bank's shortcode/name,
+        // it's almost certainly a bank SMS even if the content is "2 new messages"
+        isBankNotification = true;
       }
     }
 
@@ -213,8 +228,8 @@ class BankNotificationService {
     // 4. Fire the local prompt if verified
     if (isBankNotification) {
       // Mark as processed to prevent duplicates
-      _recentHashes.add(hash);
-      _scheduleHashCleanup(hash);
+      _recentHashes[hash] = now;
+      _scheduleHashCleanup();
 
       log('[BankNotif] ✅ MATCH! Firing local prompt.');
       _fireLocalPrompt(originalTitle, originalContent);
@@ -222,6 +237,14 @@ class BankNotificationService {
   }
 
   Future<void> _fireLocalPrompt(String bankTitle, String originalContent) async {
+    // Generate a static ID based on the bank name to organize notifications
+    // and replace the previous one instead of endlessly stacking them.
+    final int notifId = bankTitle.hashCode.abs() % 100000;
+
+    // Force cancel the old notification first to ensure the system treats the new one as fresh
+    // and plays the high-priority heads-up alert again for subsequent transactions.
+    await _localNotificationsPlugin.cancel(id: notifId);
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'bank_tracker_channel',
@@ -231,7 +254,7 @@ class BankNotificationService {
       priority: Priority.high,
       ticker: 'ticker',
       color: Color(0xFF5A4FCF),
-      ongoing: true,
+      ongoing: true, // Remains visible
       autoCancel: false,
     );
 
@@ -239,7 +262,7 @@ class BankNotificationService {
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await _localNotificationsPlugin.show(
-      id: DateTime.now().millisecondsSinceEpoch % 100000,
+      id: notifId, // Use consistent ID
       title: 'New Transaction Detected',
       body: 'Tap to record this transaction from $bankTitle in your app.',
       notificationDetails: platformChannelSpecifics,
