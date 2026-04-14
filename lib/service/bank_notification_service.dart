@@ -73,8 +73,11 @@ class BankNotificationService {
       },
     );
 
-    await _localNotificationsPlugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+    // Removed explicit POST_NOTIFICATIONS permission request to comply with Google Play Protect.
+    // Local notifications will only work on newer Android if the user grants them manually in settings,
+    // or we are relying on other mechanisms.
+    // await _localNotificationsPlugin.resolvePlatformSpecificImplementation<
+    //     AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
 
     await _startListening();
     log('[BankNotif] Initialization complete.');
@@ -95,16 +98,10 @@ class BankNotificationService {
     try {
       bool isGranted = await NotificationListenerService.isPermissionGranted();
       if (!isGranted) {
-        log('[BankNotif] Permission not granted. Requesting...');
-        await NotificationListenerService.requestPermission();
-        // Re-check after request
-        isGranted = await NotificationListenerService.isPermissionGranted();
-        if (!isGranted) {
-          log('[BankNotif] Permission still not granted after request.');
-          // Schedule a retry after 30 seconds
-          _scheduleRetry();
-          return;
-        }
+        log('[BankNotif] Permission not granted. Notification listener disabled to prevent Play Protect flags.');
+        // We explicitly do NOT request permission anymore to protect the app's standing.
+        // The background extraction feature is gracefully disabled.
+        return;
       }
 
       _notificationSubscription = NotificationListenerService.notificationsStream.listen(
